@@ -5,30 +5,36 @@ namespace App\Entity;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
-class User
+class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Column(type: Types::INTEGER)]
     private ?int $id = null;
-
-    #[ORM\Column]
-    private bool $admin = false;
-
-    #[ORM\Column]
-    private ?string $name;
-
-    #[ORM\Column(type: 'text', nullable: true)]
-    private ?string $description;
 
     #[ORM\Column(length: 180, unique: true)]
     private ?string $email = null;
 
-    #[ORM\OneToMany(targetEntity: Media::class, mappedBy: 'user')]
+    #[ORM\Column(length: 255)]
+    private ?string $password = null;
+
+    #[ORM\Column(length: 255)]
+    private ?string $name = null;
+
+    #[ORM\Column(name: 'description', type: Types::TEXT, nullable: true)]
+    private ?string $description = null;
+
+    #[ORM\Column(name: 'is_admin', type: Types::BOOLEAN)]
+    private bool $admin = false;
+
+    #[ORM\OneToMany(targetEntity: Media::class, mappedBy: 'user', cascade: ['remove'])]
     private Collection $medias;
 
     public function __construct()
@@ -36,6 +42,7 @@ class User
         $this->medias = new ArrayCollection();
     }
 
+    // Identification
     public function getId(): ?int
     {
         return $this->id;
@@ -49,10 +56,41 @@ class User
     public function setEmail(string $email): static
     {
         $this->email = $email;
-
         return $this;
     }
 
+    public function getUserIdentifier(): string
+    {
+        return (string) $this->email;
+    }
+
+    // Sécurité et rôles
+    public function getRoles(): array
+    {
+        $roles = ['ROLE_USER'];
+        if ($this->admin) {
+            $roles[] = 'ROLE_ADMIN';
+        }
+        return array_unique($roles);
+    }
+
+    public function eraseCredentials(): void
+    {
+        // Aucun champ sensible temporaire à nettoyer
+    }
+
+    public function getPassword(): ?string
+    {
+        return $this->password;
+    }
+
+    public function setPassword(string $password): static
+    {
+        $this->password = $password;
+        return $this;
+    }
+
+    // Profil
     public function getName(): ?string
     {
         return $this->name;
@@ -73,14 +111,29 @@ class User
         $this->description = $description;
     }
 
+    // Relation avec Media
     public function getMedias(): Collection
     {
         return $this->medias;
     }
 
-    public function setMedias(Collection $medias): void
+    public function addMedia(Media $media): static
     {
-        $this->medias = $medias;
+        if (!$this->medias->contains($media)) {
+            $this->medias->add($media);
+            $media->setUser($this);
+        }
+        return $this;
+    }
+
+    public function removeMedia(Media $media): static
+    {
+        if ($this->medias->removeElement($media)) {
+            if ($media->getUser() === $this) {
+                $media->setUser(null);
+            }
+        }
+        return $this;
     }
 
     public function isAdmin(): bool

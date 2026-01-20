@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\MediaRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
@@ -11,19 +12,20 @@ class Media
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Column(type: Types::INTEGER)]
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: "medias", fetch: "EAGER")]
+    #[ORM\JoinColumn(nullable: false, onDelete: "CASCADE")]
     private ?User $user = null;
 
-    #[ORM\ManyToOne(targetEntity: Album::class, fetch: "EAGER")]
+    #[ORM\ManyToOne(targetEntity: Album::class, inversedBy: "medias", fetch: "EAGER")]
     private ?Album $album = null;
 
-    #[ORM\Column]
+    #[ORM\Column(name:'path', length: 255, type: Types::STRING)]
     private string $path;
 
-    #[ORM\Column]
+    #[ORM\Column(name:'title', length: 150, type: Types::STRING)]
     private string $title;
 
     private ?UploadedFile $file = null;
