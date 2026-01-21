@@ -45,31 +45,56 @@ class MediaController extends AbstractController
     public function add(Request $request)
     {
         $media = new Media();
-        $form = $this->createForm(MediaType::class, $media, ['is_admin' => $this->isGranted('ROLE_ADMIN')]);
+        $form = $this->createForm(MediaType::class, $media, [
+            'is_admin' => $this->isGranted('ROLE_ADMIN'),
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $file = $form->get('file')->getData();
+
+            if ($file) {
+                $filename = uniqid() . '.' . $file->guessExtension();
+                $uploadDir = $this->getParameter('kernel.project_dir') . '/public/uploads';
+                $file->move($uploadDir, $filename);
+
+                $media->setPath('uploads/' . $filename);
+            }
+
             if (!$this->isGranted('ROLE_ADMIN')) {
                 $media->setUser($this->getUser());
             }
-            $media->setPath('uploads/' . md5(uniqid()) . '.' . $media->getFile()->guessExtension());
-            $media->getFile()->move('uploads/', $media->getPath());
+
             $this->em->persist($media);
             $this->em->flush();
 
             return $this->redirectToRoute('admin_media_index');
         }
 
-        return $this->render('admin/media/add.html.twig', ['form' => $form->createView()]);
+        return $this->render('admin/media/add.html.twig', [
+            'form' => $form->createView(),
+        ]);
     }
 
     #[Route('/delete/{id}', name: 'admin_media_delete')]
     public function delete(int $id)
     {
         $media = $this->mediaRepository->find($id);
+
+        if (!$media) {
+            $this->addFlash('error', 'Le média demandé est introuvable.');
+            return $this->redirectToRoute('admin_media_index');
+        }
+
+        $path = $this->getParameter('kernel.project_dir') . '/public/' . $media->getPath();
+        if (file_exists($path) && is_file($path)) {
+            unlink($path);
+        }
+
         $this->em->remove($media);
         $this->em->flush();
-        unlink($media->getPath());
+
+        $this->addFlash('success', 'Le média a bien été supprimé.');
 
         return $this->redirectToRoute('admin_media_index');
     }

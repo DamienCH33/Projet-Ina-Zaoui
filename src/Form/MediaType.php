@@ -11,6 +11,8 @@ use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\File;
+use Symfony\Component\Validator\Constraints\NotNull;
 
 class MediaType extends AbstractType
 {
@@ -18,7 +20,24 @@ class MediaType extends AbstractType
     {
         $builder
             ->add('file', FileType::class, [
-                'label' => 'Image',
+                'label' => 'Fichier image',
+                'mapped' => false,
+                'required' => true,
+                'constraints' => [
+                    new NotNull([
+                        'message' => 'Veuillez choisir un fichier.',
+                    ]),
+                    new File([
+                        'maxSize' => '2M',
+                        'mimeTypes' => [
+                            'image/jpeg',
+                            'image/png',
+                            'image/gif',
+                            'image/webp',
+                        ],
+                        'mimeTypesMessage' => 'Seules les images (JPEG, PNG, GIF, WEBP) sont autorisées.',
+                    ]),
+                ],
             ])
             ->add('title', TextType::class, [
                 'label' => 'Titre',
