@@ -11,7 +11,7 @@ use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Component\Validator\Constraints\File;
+use Symfony\Component\Validator\Constraints\Image;
 use Symfony\Component\Validator\Constraints\NotNull;
 
 class MediaType extends AbstractType
@@ -27,7 +27,7 @@ class MediaType extends AbstractType
                     new NotNull([
                         'message' => 'Veuillez choisir un fichier.',
                     ]),
-                    new File([
+                    new Image([
                         'maxSize' => '2M',
                         'mimeTypes' => [
                             'image/jpeg',
