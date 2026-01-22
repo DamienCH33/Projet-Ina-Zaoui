@@ -2,6 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1"/>
 		<title>
 			{% block title %}Ina Zaoui
 			{% endblock %}
@@ -15,7 +16,7 @@
 		{% endblock %}
 	</head>
 	<body>
-		{% include 'flash_messages.html.twig' %}
+		{% include '_flash_messages.html.twig' %}
 
 		{% block body %}{% endblock %}
 	</body>
