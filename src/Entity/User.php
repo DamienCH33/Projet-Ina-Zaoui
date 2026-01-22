@@ -34,6 +34,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(name: 'is_admin', type: Types::BOOLEAN)]
     private bool $admin = false;
 
+    #[ORM\Column(name: 'is_active', type: Types::BOOLEAN)]
+    private bool $isActive = true;
+
     #[ORM\OneToMany(targetEntity: Media::class, mappedBy: 'user', cascade: ['remove'])]
     private Collection $medias;
 
@@ -42,7 +45,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->medias = new ArrayCollection();
     }
 
-    // Identification
     public function getId(): ?int
     {
         return $this->id;
@@ -74,10 +76,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return array_unique($roles);
     }
 
-    public function eraseCredentials(): void
-    {
-        // Aucun champ sensible temporaire à nettoyer
-    }
+    public function eraseCredentials(): void {}
 
     public function getPassword(): ?string
     {
@@ -90,7 +89,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    // Profil
     public function getName(): ?string
     {
         return $this->name;
@@ -111,7 +109,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->description = $description;
     }
 
-    // Relation avec Media
     public function getMedias(): Collection
     {
         return $this->medias;
@@ -135,7 +132,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
         return $this;
     }
-
     public function isAdmin(): bool
     {
         return $this->admin;
@@ -144,5 +140,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setAdmin(bool $admin): void
     {
         $this->admin = $admin;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->isActive;
+    }
+
+    public function setIsActive(bool $isActive): self
+    {
+        $this->isActive = $isActive;
+        return $this;
+    }
+    public function isEnabled(): bool
+    {
+        return $this->isActive;
     }
 }
