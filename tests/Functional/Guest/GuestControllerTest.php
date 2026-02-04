@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Guest;
 
-use App\Entity\User;
 use App\DataFixtures\AppFixtures;
+use App\Entity\User;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Loader;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
@@ -35,7 +35,7 @@ final class GuestControllerTest extends WebTestCase
         $loader = new Loader();
         $loader->addFixture(new AppFixtures($hasher));
 
-        $purger = new ORMpurger($this->entityManager);
+        $purger = new ORMPurger($this->entityManager);
         $executor = new ORMExecutor($this->entityManager, $purger);
         $executor->execute($loader->getFixtures());
 
@@ -68,7 +68,7 @@ final class GuestControllerTest extends WebTestCase
             ->getRepository(User::class)
             ->findOneBy(['email' => $email]);
 
-        if ($admin === null) {
+        if (null === $admin) {
             $admin = new User();
             $admin->setName('Admin Test');
             $admin->setEmail($email);
@@ -86,7 +86,7 @@ final class GuestControllerTest extends WebTestCase
     public function testAdminCanViewGuestList(): void
     {
         $guestName = 'Invité Test';
-        $this->createGuest($guestName, 'guest_' . uniqid() . '@test.com');
+        $this->createGuest($guestName, 'guest_'.uniqid().'@test.com');
 
         $crawler = $this->client->request('GET', '/admin/guest/');
 
@@ -95,7 +95,7 @@ final class GuestControllerTest extends WebTestCase
 
         $guestCards = $crawler->filter('.card .guest-info strong');
         $guestNames = array_map(
-            static fn($node) => trim($node->textContent),
+            static fn ($node) => trim($node->textContent),
             iterator_to_array($guestCards)
         );
 
@@ -110,7 +110,7 @@ final class GuestControllerTest extends WebTestCase
     {
         $crawler = $this->client->request('GET', '/admin/guest/add');
 
-        $uniqueEmail = 'newguest_' . uniqid() . '@test.com';
+        $uniqueEmail = 'newguest_'.uniqid().'@test.com';
 
         $form = $crawler->selectButton('Ajouter')->form([
             'user[name]' => 'Nouvel Invité',
@@ -153,7 +153,7 @@ final class GuestControllerTest extends WebTestCase
         $crawler = $this->client->request('GET', '/admin/guest/');
 
         $form = $crawler
-            ->filter('form[action$="/toggle/' . $guest->getId() . '"]')
+            ->filter('form[action$="/toggle/'.$guest->getId().'"]')
             ->form();
 
         $this->client->submit($form);
@@ -176,7 +176,7 @@ final class GuestControllerTest extends WebTestCase
 
         $this->client->request(
             'POST',
-            '/admin/guest/delete/' . $guestId,
+            '/admin/guest/delete/'.$guestId,
             [],
             [],
             ['CONTENT_TYPE' => 'application/x-www-form-urlencoded']

@@ -25,6 +25,7 @@ final class HomeControllerTest extends WebTestCase
         $this->assertResponseIsSuccessful();
         $this->assertSelectorExists('main', 'La page about doit contenir un main');
     }
+
     public function testPortfolioPageIsSuccessful(): void
     {
         $client = static::createClient();

@@ -5,9 +5,9 @@ namespace App\Controller;
 use App\Repository\AlbumRepository;
 use App\Repository\MediaRepository;
 use App\Repository\UserRepository;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Attribute\Route;
 
 class HomeController extends AbstractController
@@ -16,7 +16,8 @@ class HomeController extends AbstractController
         private AlbumRepository $albumRepository,
         private MediaRepository $mediaRepository,
         private UserRepository $userRepository,
-    ) {}
+    ) {
+    }
 
     #[Route('/', name: 'home')]
     public function home(): Response
@@ -37,7 +38,7 @@ class HomeController extends AbstractController
             $guestsData[] = [
                 'guest' => [
                     'id' => $row['id'],
-                    'name' => $row['name']
+                    'name' => $row['name'],
                 ],
                 'activeMediasCount' => (int) $row['activeMediasCount'],
             ];
@@ -48,7 +49,7 @@ class HomeController extends AbstractController
         return $this->render('front/guests.html.twig', [
             'guestsData' => $guestsData,
             'currentPage' => $page,
-            'totalPages' => $totalPages
+            'totalPages' => $totalPages,
         ]);
     }
 
@@ -57,15 +58,15 @@ class HomeController extends AbstractController
     {
         $guest = $this->userRepository->findOneBy([
             'id' => $id,
-            'isActive' => true
+            'isActive' => true,
         ]);
 
-        if ($guest === null) {
+        if (null === $guest) {
             throw $this->createNotFoundException('Invité introuvable ou désactivé.');
         }
 
         return $this->render('front/guest.html.twig', [
-            'guest' => $guest
+            'guest' => $guest,
         ]);
     }
 
@@ -83,7 +84,7 @@ class HomeController extends AbstractController
         return $this->render('front/portfolio.html.twig', [
             'albums' => $albums,
             'album' => $album,
-            'medias' => $medias
+            'medias' => $medias,
         ]);
     }
 

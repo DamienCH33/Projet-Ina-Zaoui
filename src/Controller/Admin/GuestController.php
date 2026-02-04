@@ -5,7 +5,6 @@ namespace App\Controller\Admin;
 use App\Entity\User;
 use App\Form\UserType;
 use App\Repository\UserRepository;
-use App\Service\GuestService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -18,7 +17,10 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[Route('/admin/guest')]
 class GuestController extends AbstractController
 {
-    public function __construct(private UserRepository $userRepository, private EntityManagerInterface $em,  private UserPasswordHasherInterface $passwordHasher) {}
+    public function __construct(private UserRepository $userRepository, private EntityManagerInterface $em, private UserPasswordHasherInterface $passwordHasher)
+    {
+    }
+
     #[Route('/', name: 'admin_guest_index')]
     public function index(Request $request): Response
     {
@@ -88,6 +90,7 @@ class GuestController extends AbstractController
         $guest = $this->userRepository->find($id);
         if (!$guest) {
             $this->addFlash('error', 'Invité introuvable.');
+
             return $this->redirectToRoute('admin_guest_index');
         }
 
@@ -95,6 +98,7 @@ class GuestController extends AbstractController
         $this->em->flush();
 
         $this->addFlash('success', 'Invité supprimé avec tout son contenu.');
+
         return $this->redirectToRoute('admin_guest_index');
     }
 
@@ -104,6 +108,7 @@ class GuestController extends AbstractController
         $guest = $this->userRepository->find($id);
         if (!$guest) {
             $this->addFlash('error', 'Invité introuvable.');
+
             return $this->redirectToRoute('admin_guest_index');
         }
 

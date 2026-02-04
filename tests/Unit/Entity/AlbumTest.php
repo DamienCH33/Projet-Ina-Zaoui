@@ -15,6 +15,7 @@ final class AlbumTest extends TestCase
         $album->setName('Mon Album');
         $this->assertSame('Mon Album', $album->getName());
     }
+
     public function testMediasCollectionIsInitialized(): void
     {
         $album = new Album();

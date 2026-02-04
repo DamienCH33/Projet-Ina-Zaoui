@@ -15,6 +15,7 @@ final class MediaTypeTest extends TypeTestCase
     protected function getExtensions(): array
     {
         $validator = Validation::createValidator();
+
         return [new ValidatorExtension($validator)];
     }
 

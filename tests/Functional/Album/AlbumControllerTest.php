@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Admin;
 
+use App\DataFixtures\AppFixtures;
 use App\Entity\Album;
 use App\Entity\User;
-use App\DataFixtures\AppFixtures;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Loader;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
@@ -116,7 +116,7 @@ final class AlbumControllerTest extends WebTestCase
 
         $crawler = $this->client->request(
             'GET',
-            '/admin/album/update/' . $album->getId()
+            '/admin/album/update/'.$album->getId()
         );
 
         $form = $crawler->selectButton('Modifier')->form([
@@ -164,7 +164,7 @@ final class AlbumControllerTest extends WebTestCase
 
         $albumId = $album->getId();
 
-        $this->client->request('GET', '/admin/album/delete/' . $albumId);
+        $this->client->request('GET', '/admin/album/delete/'.$albumId);
 
         $this->assertTrue($this->client->getResponse()->isRedirect());
         $this->client->followRedirect();

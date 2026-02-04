@@ -21,13 +21,10 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
 
     public function upgradePassword(
         PasswordAuthenticatedUserInterface $user,
-        string $newHashedPassword
+        string $newHashedPassword,
     ): void {
         if (!$user instanceof User) {
-            throw new UnsupportedUserException(sprintf(
-                'Instances of "%s" are not supported.',
-                $user::class
-            ));
+            throw new UnsupportedUserException(sprintf('Instances of "%s" are not supported.', $user::class));
         }
 
         $user->setPassword($newHashedPassword);
@@ -64,7 +61,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $rows = $stmt->executeQuery()->fetchAllAssociative();
 
         return array_map(
-            static fn(array $row): array => [
+            static fn (array $row): array => [
                 'id' => (int) $row['id'],
                 'name' => (string) $row['name'],
                 'activeMediasCount' => (int) $row['activeMediasCount'],

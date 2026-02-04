@@ -61,12 +61,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmail(string $email): static
     {
         $this->email = $email;
+
         return $this;
     }
 
     public function getUserIdentifier(): string
     {
-        if ($this->email === null || $this->email === '') {
+        if (null === $this->email || '' === $this->email) {
             throw new \LogicException('User has no email.');
         }
 
@@ -79,10 +80,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->admin) {
             $roles[] = 'ROLE_ADMIN';
         }
+
         return array_unique($roles);
     }
 
-    public function eraseCredentials(): void {}
+    public function eraseCredentials(): void
+    {
+    }
 
     public function getPassword(): ?string
     {
@@ -92,6 +96,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPassword(string $password): static
     {
         $this->password = $password;
+
         return $this;
     }
 
@@ -129,6 +134,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             $this->medias->add($media);
             $media->setUser($this);
         }
+
         return $this;
     }
 
@@ -139,6 +145,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
                 $media->setUser(null);
             }
         }
+
         return $this;
     }
 
@@ -160,6 +167,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setIsActive(bool $isActive): self
     {
         $this->isActive = $isActive;
+
         return $this;
     }
 

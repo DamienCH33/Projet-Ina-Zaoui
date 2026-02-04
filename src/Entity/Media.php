@@ -15,11 +15,11 @@ class Media
     #[ORM\Column(type: Types::INTEGER)]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: "medias", fetch: "LAZY")]
-    #[ORM\JoinColumn(nullable: false, onDelete: "CASCADE")]
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'medias', fetch: 'LAZY')]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?User $user = null;
 
-    #[ORM\ManyToOne(targetEntity: Album::class, inversedBy: "medias", fetch: "EAGER")]
+    #[ORM\ManyToOne(targetEntity: Album::class, inversedBy: 'medias', fetch: 'EAGER')]
     private ?Album $album = null;
 
     #[ORM\Column(name: 'path', length: 255, type: Types::STRING)]
@@ -34,6 +34,7 @@ class Media
     {
         return $this->id;
     }
+
     public function getUser(): ?User
     {
         return $this->user;

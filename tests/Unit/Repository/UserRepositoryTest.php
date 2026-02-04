@@ -57,7 +57,7 @@ final class UserRepositoryTest extends KernelTestCase
     {
         $users = $this->repository->findAll();
 
-        if ($users === []) {
+        if ([] === $users) {
             $this->markTestSkipped('Pas d’utilisateur en base.');
         }
 

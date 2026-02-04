@@ -9,13 +9,13 @@ use App\Form\AlbumType;
 use Symfony\Component\Form\Extension\Validator\ValidatorExtension;
 use Symfony\Component\Form\Test\TypeTestCase;
 use Symfony\Component\Validator\Validation;
-use Symfony\Component\Validator\Constraints\NotBlank;
 
 final class AlbumTypeTest extends TypeTestCase
 {
     protected function getExtensions(): array
     {
         $validator = Validation::createValidator();
+
         return [new ValidatorExtension($validator)];
     }
 

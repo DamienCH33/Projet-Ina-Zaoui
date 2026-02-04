@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Admin;
 
+use App\DataFixtures\AppFixtures;
 use App\Entity\Media;
 use App\Entity\User;
-use App\DataFixtures\AppFixtures;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Loader;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
@@ -86,7 +86,7 @@ final class MediaControllerTest extends WebTestCase
 
         /** @var string $projectDir */
         $projectDir = static::getContainer()->getParameter('kernel.project_dir');
-        $filePath = $projectDir . '/public/uploads/test_delete.jpg';
+        $filePath = $projectDir.'/public/uploads/test_delete.jpg';
 
         if (!is_dir(dirname($filePath))) {
             mkdir(dirname($filePath), 0777, true);
@@ -105,7 +105,7 @@ final class MediaControllerTest extends WebTestCase
 
         $mediaId = $media->getId();
 
-        $this->client->request('GET', '/admin/media/delete/' . $mediaId);
+        $this->client->request('GET', '/admin/media/delete/'.$mediaId);
 
         $this->assertTrue($this->client->getResponse()->isRedirect());
         $this->client->followRedirect();

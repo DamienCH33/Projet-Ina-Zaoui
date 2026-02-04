@@ -21,8 +21,9 @@ class AlbumController extends AbstractController
     public function __construct(
         private AlbumRepository $albumRepository,
         private MediaRepository $mediaRepository,
-        private EntityManagerInterface $em
-    ) {}
+        private EntityManagerInterface $em,
+    ) {
+    }
 
     #[Route('/', name: 'admin_album_index')]
     public function index(): Response
@@ -46,6 +47,7 @@ class AlbumController extends AbstractController
             $this->em->flush();
 
             $this->addFlash('success', 'L’album a bien été ajouté.');
+
             return $this->redirectToRoute('admin_album_index');
         }
 
@@ -61,6 +63,7 @@ class AlbumController extends AbstractController
 
         if (!$album) {
             $this->addFlash('error', 'Album introuvable.');
+
             return $this->redirectToRoute('admin_album_index');
         }
 
@@ -86,6 +89,7 @@ class AlbumController extends AbstractController
 
         if (!$album) {
             $this->addFlash('error', 'Album introuvable.');
+
             return $this->redirectToRoute('admin_album_index');
         }
 
@@ -98,7 +102,7 @@ class AlbumController extends AbstractController
         foreach ($medias as $media) {
             $path = $media->getPath();
 
-            $filePath = $projectDir . '/public/' . $path;
+            $filePath = $projectDir.'/public/'.$path;
 
             if (is_file($filePath)) {
                 unlink($filePath);

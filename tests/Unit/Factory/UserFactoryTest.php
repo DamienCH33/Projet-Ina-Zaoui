@@ -3,8 +3,8 @@
 namespace App\Tests\Unit\Factory;
 
 use App\Factory\UserFactory;
-use Zenstruck\Foundry\Test\Factories;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Zenstruck\Foundry\Test\Factories;
 
 class UserFactoryTest extends KernelTestCase
 {

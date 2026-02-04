@@ -18,8 +18,9 @@ class MediaController extends AbstractController
 {
     public function __construct(
         private MediaRepository $mediaRepository,
-        private EntityManagerInterface $em
-    ) {}
+        private EntityManagerInterface $em,
+    ) {
+    }
 
     #[Route('/', name: 'admin_media_index')]
     public function index(Request $request): Response
@@ -43,7 +44,7 @@ class MediaController extends AbstractController
         return $this->render('admin/media/index.html.twig', [
             'medias' => $medias,
             'total' => $total,
-            'page' => $page
+            'page' => $page,
         ]);
     }
 
@@ -60,15 +61,15 @@ class MediaController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $file = $form->get('file')->getData();
 
-            if ($file !== null) {
+            if (null !== $file) {
                 /** @var string $projectDir */
                 $projectDir = $this->getParameter('kernel.project_dir');
 
-                $filename = uniqid() . '.' . $file->guessExtension();
-                $uploadDir = $projectDir . '/public/uploads';
+                $filename = uniqid().'.'.$file->guessExtension();
+                $uploadDir = $projectDir.'/public/uploads';
 
                 $file->move($uploadDir, $filename);
-                $media->setPath('uploads/' . $filename);
+                $media->setPath('uploads/'.$filename);
             }
 
             if (!$this->isGranted('ROLE_ADMIN')) {
@@ -97,8 +98,9 @@ class MediaController extends AbstractController
     {
         $media = $this->mediaRepository->find($id);
 
-        if ($media === null) {
+        if (null === $media) {
             $this->addFlash('error', 'Le média demandé est introuvable.');
+
             return $this->redirectToRoute('admin_media_index');
         }
 
@@ -107,7 +109,7 @@ class MediaController extends AbstractController
 
         $path = $media->getPath();
 
-        $filePath = $projectDir . '/public/' . $path;
+        $filePath = $projectDir.'/public/'.$path;
 
         if (is_file($filePath)) {
             unlink($filePath);
