@@ -27,15 +27,16 @@
 				<div class="guest-actions d-flex gap-2">
 
 					{% if is_granted('ROLE_ADMIN') %}
-						<a href="{{ path('admin_guests_toggle', {id: guest.id}) }}" class="btn btn-sm btn-info">
-							{% if guest.isActive %}Désactiver{% else %}Activer
-							{% endif %}
-						</a>
+						<form action="{{ path('admin_guests_toggle', {id: guest.id}) }}" method="POST" style="display:inline;">
+							<button class="btn btn-sm btn-info">
+								{% if guest.isActive %}Désactiver{% else %}Activer
+								{% endif %}
+							</button>
+						</form>
 					{% endif %}
-
-					<a href="{{ path('admin_guest_delete', {id: guest.id}) }}" class="btn btn-sm btn-danger" onclick="return confirm('Voulez-vous vraiment supprimer cet invité et tout son contenu ?')">
-						Supprimer
-					</a>
+					<form action="{{ path('admin_guest_delete', {id: guest.id}) }}" method="POST" style="display:inline;" onsubmit="return confirm('Voulez-vous vraiment supprimer cet invité ?')">
+						<button class="btn btn-sm btn-danger">Supprimer</button>
+					</form>
 				</div>
 			</div>
 		</div>
