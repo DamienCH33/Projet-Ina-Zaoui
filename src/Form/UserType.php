@@ -23,20 +23,20 @@ class UserType extends AbstractType
             ->add('email', EmailType::class, [
                 'label' => 'Adresse e-mail',
                 'constraints' => [
-                    new NotBlank(['message' => 'L’email est obligatoire.']),
-                    new Email(['message' => 'Veuillez entrer un email valide.']),
+                    new NotBlank(message: 'L’email est obligatoire.'),
+                    new Email(message: 'Veuillez entrer un email valide.'),
                 ],
             ])
             ->add('name', TextType::class, [
                 'label' => 'Nom complet',
                 'constraints' => [
-                    new NotBlank(['message' => 'Le nom est obligatoire.']),
+                    new NotBlank(message : 'Le nom est obligatoire.'),
                 ],
             ])
             ->add('description', TextareaType::class, [
                 'label' => 'Description',
                 'constraints' => [
-                    new NotBlank(['message' => 'La description est obligatoire.']),
+                    new NotBlank(message : 'La description est obligatoire.'),
                 ]
             ])
             ->add('isActive', CheckboxType::class, [
