@@ -22,10 +22,10 @@ class Media
     #[ORM\ManyToOne(targetEntity: Album::class, inversedBy: "medias", fetch: "EAGER")]
     private ?Album $album = null;
 
-    #[ORM\Column(name:'path', length: 255, type: Types::STRING)]
+    #[ORM\Column(name: 'path', length: 255, type: Types::STRING)]
     private string $path;
 
-    #[ORM\Column(name:'title', length: 150, type: Types::STRING)]
+    #[ORM\Column(name: 'title', length: 150, type: Types::STRING)]
     private string $title;
 
     private ?UploadedFile $file = null;
@@ -34,7 +34,6 @@ class Media
     {
         return $this->id;
     }
-
     public function getUser(): ?User
     {
         return $this->user;

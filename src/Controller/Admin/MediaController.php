@@ -106,12 +106,11 @@ class MediaController extends AbstractController
         $projectDir = $this->getParameter('kernel.project_dir');
 
         $path = $media->getPath();
-        if ($path !== null) {
-            $filePath = $projectDir . '/public/' . $path;
 
-            if (is_file($filePath)) {
-                unlink($filePath);
-            }
+        $filePath = $projectDir . '/public/' . $path;
+
+        if (is_file($filePath)) {
+            unlink($filePath);
         }
 
         $this->em->remove($media);

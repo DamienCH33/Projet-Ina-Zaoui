@@ -16,9 +16,12 @@ class Album
     #[ORM\Column(type: Types::INTEGER)]
     private ?int $id = null;
 
-    #[ORM\Column(name:'name',length: 150, type: Types::STRING)]
+    #[ORM\Column(name: 'name', length: 150, type: Types::STRING)]
     private ?string $name = null;
 
+    /**
+     * @var Collection<int, Media>
+     */
     #[ORM\OneToMany(targetEntity: Media::class, mappedBy: 'album', cascade: ['remove'])]
     private Collection $medias;
 
@@ -42,6 +45,9 @@ class Album
         $this->name = $name;
     }
 
+    /**
+     * @return Collection<int, Media>
+     */
     public function getMedias(): Collection
     {
         return $this->medias;

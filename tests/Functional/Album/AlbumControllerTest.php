@@ -6,35 +6,46 @@ namespace App\Tests\Functional\Admin;
 
 use App\Entity\Album;
 use App\Entity\User;
+use App\DataFixtures\AppFixtures;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
-use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Doctrine\Common\DataFixtures\Loader;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 final class AlbumControllerTest extends WebTestCase
 {
-    private $client;
+    private KernelBrowser $client;
     private EntityManagerInterface $entityManager;
 
     protected function setUp(): void
     {
+        self::ensureKernelShutdown();
         $this->client = static::createClient();
         $container = static::getContainer();
-        $this->entityManager = $container->get('doctrine')->getManager();
+
+        /** @var EntityManagerInterface $entityManager */
+        $entityManager = $container->get(EntityManagerInterface::class);
+        $this->entityManager = $entityManager;
+
+        /** @var UserPasswordHasherInterface $hasher */
+        $hasher = $container->get(UserPasswordHasherInterface::class);
 
         $loader = new Loader();
-        $loader->addFixture(
-            new \App\DataFixtures\AppFixtures($container->get(UserPasswordHasherInterface::class))
-        );
+        $loader->addFixture(new AppFixtures($hasher));
 
         $purger = new ORMPurger($this->entityManager);
         $executor = new ORMExecutor($this->entityManager, $purger);
         $executor->execute($loader->getFixtures());
 
-        $admin = $this->entityManager->getRepository(User::class)
+        $admin = $this->entityManager
+            ->getRepository(User::class)
             ->findOneBy(['email' => 'ina@zaoui.com']);
+
+        self::assertNotNull($admin, 'L’utilisateur admin doit exister pour les tests.');
+
         $this->client->loginUser($admin);
     }
 
@@ -66,8 +77,10 @@ final class AlbumControllerTest extends WebTestCase
 
         $this->assertSelectorExists('.alert-success', 'Un message de succès doit s’afficher.');
 
-        $album = $this->entityManager->getRepository(Album::class)
+        $album = $this->entityManager
+            ->getRepository(Album::class)
             ->findOneBy(['name' => 'Nouvel Album Test']);
+
         $this->assertNotNull($album, 'L’album doit exister en base.');
     }
 
@@ -101,17 +114,28 @@ final class AlbumControllerTest extends WebTestCase
         $this->entityManager->persist($album);
         $this->entityManager->flush();
 
-        $crawler = $this->client->request('GET', '/admin/album/update/' . $album->getId());
+        $crawler = $this->client->request(
+            'GET',
+            '/admin/album/update/' . $album->getId()
+        );
 
         $form = $crawler->selectButton('Modifier')->form([
             'album[name]' => 'Album Modifié',
         ]);
+
         $this->client->submit($form);
         $this->client->followRedirect();
 
-        $this->assertSelectorExists('.alert-success', 'Un message de succès doit s’afficher après la mise à jour.');
+        $this->assertSelectorExists(
+            '.alert-success',
+            'Un message de succès doit s’afficher après la mise à jour.'
+        );
 
-        $updated = $this->entityManager->getRepository(Album::class)->find($album->getId());
+        $updated = $this->entityManager
+            ->getRepository(Album::class)
+            ->find($album->getId());
+
+        self::assertNotNull($updated);
         $this->assertSame('Album Modifié', $updated->getName());
     }
 
@@ -119,9 +143,15 @@ final class AlbumControllerTest extends WebTestCase
     public function testUpdateNonExistingAlbumRedirectsWithError(): void
     {
         $this->client->request('GET', '/admin/album/update/999999');
+
         $this->assertTrue($this->client->getResponse()->isRedirect());
+
         $this->client->followRedirect();
-        $this->assertSelectorExists('.alert-error, .alert-danger', 'Un message d’erreur doit apparaître.');
+
+        $this->assertSelectorExists(
+            '.alert-error, .alert-danger',
+            'Un message d’erreur doit apparaître.'
+        );
     }
 
     /** Test de suppression d’un album existant */
@@ -133,15 +163,13 @@ final class AlbumControllerTest extends WebTestCase
         $this->entityManager->flush();
 
         $albumId = $album->getId();
-        $this->assertNotNull($albumId, 'L’album doit avoir un ID après flush.');
 
         $this->client->request('GET', '/admin/album/delete/' . $albumId);
 
         $this->assertTrue($this->client->getResponse()->isRedirect());
         $this->client->followRedirect();
 
-        $deleted = static::getContainer()
-            ->get('doctrine')
+        $deleted = $this->entityManager
             ->getRepository(Album::class)
             ->find($albumId);
 
@@ -152,9 +180,14 @@ final class AlbumControllerTest extends WebTestCase
     public function testDeleteNonExistingAlbumShowsError(): void
     {
         $this->client->request('GET', '/admin/album/delete/999999');
+
         $this->assertTrue($this->client->getResponse()->isRedirect());
         $this->client->followRedirect();
-        $this->assertSelectorExists('.alert-error, .alert-danger', 'Un message d’erreur doit s’afficher.');
+
+        $this->assertSelectorExists(
+            '.alert-error, .alert-danger',
+            'Un message d’erreur doit s’afficher.'
+        );
     }
 
     protected function tearDown(): void

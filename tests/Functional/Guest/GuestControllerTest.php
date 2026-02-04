@@ -5,35 +5,48 @@ declare(strict_types=1);
 namespace App\Tests\Functional\Guest;
 
 use App\Entity\User;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Doctrine\Bundle\FixturesBundle\Fixture;
-use Doctrine\Common\DataFixtures\Purger\ORMPurger;
+use App\DataFixtures\AppFixtures;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Loader;
+use Doctrine\Common\DataFixtures\Purger\ORMPurger;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 final class GuestControllerTest extends WebTestCase
 {
-    private $client;
-    private $entityManager;
+    private KernelBrowser $client;
+    private EntityManagerInterface $entityManager;
 
     protected function setUp(): void
-{
-    $this->client = static::createClient();
-    $container = static::getContainer();
-    $this->entityManager = $container->get('doctrine')->getManager();
+    {
+        self::ensureKernelShutdown();
+        $this->client = static::createClient();
+        $container = static::getContainer();
 
-    $loader = new Loader();
-    $loader->addFixture(new \App\DataFixtures\AppFixtures($container->get(UserPasswordHasherInterface::class)));
+        /** @var EntityManagerInterface $entityManager */
+        $entityManager = $container->get(EntityManagerInterface::class);
+        $this->entityManager = $entityManager;
 
-    $purger = new ORMPurger($this->entityManager);
-    $executor = new ORMExecutor($this->entityManager, $purger);
-    $executor->execute($loader->getFixtures());
+        /** @var UserPasswordHasherInterface $hasher */
+        $hasher = $container->get(UserPasswordHasherInterface::class);
 
-    $admin = $this->entityManager->getRepository(User::class)
-        ->findOneBy(['email' => 'ina@zaoui.com']);
-    $this->client->loginUser($admin);
-}
+        $loader = new Loader();
+        $loader->addFixture(new AppFixtures($hasher));
+
+        $purger = new ORMpurger($this->entityManager);
+        $executor = new ORMExecutor($this->entityManager, $purger);
+        $executor->execute($loader->getFixtures());
+
+        $admin = $this->entityManager
+            ->getRepository(User::class)
+            ->findOneBy(['email' => 'ina@zaoui.com']);
+
+        self::assertNotNull($admin, 'L’utilisateur admin doit exister.');
+        $this->client->loginUser($admin);
+    }
+
     private function createGuest(string $name, string $email): User
     {
         $guest = new User();
@@ -51,9 +64,11 @@ final class GuestControllerTest extends WebTestCase
 
     private function createAdmin(string $email): User
     {
-        $admin = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $email]);
+        $admin = $this->entityManager
+            ->getRepository(User::class)
+            ->findOneBy(['email' => $email]);
 
-        if (!$admin) {
+        if ($admin === null) {
             $admin = new User();
             $admin->setName('Admin Test');
             $admin->setEmail($email);
@@ -67,21 +82,30 @@ final class GuestControllerTest extends WebTestCase
 
         return $admin;
     }
+
     public function testAdminCanViewGuestList(): void
     {
         $guestName = 'Invité Test';
-        $this->createGuest($guestName, 'guest' . uniqid() . '@test.com');
+        $this->createGuest($guestName, 'guest_' . uniqid() . '@test.com');
 
         $crawler = $this->client->request('GET', '/admin/guest/');
 
         $mainH1 = $crawler->filter('main h1');
-        $this->assertCount(1, $mainH1, 'Il devrait y avoir un h1 dans main');
+        $this->assertCount(1, $mainH1, 'Il doit y avoir un h1 dans main');
 
         $guestCards = $crawler->filter('.card .guest-info strong');
-        $guestNames = array_map(fn($node) => trim($node->textContent), iterator_to_array($guestCards));
+        $guestNames = array_map(
+            static fn($node) => trim($node->textContent),
+            iterator_to_array($guestCards)
+        );
 
-        $this->assertContains($guestName, $guestNames, 'Le guest créé doit apparaître dans la liste');
+        $this->assertContains(
+            $guestName,
+            $guestNames,
+            'Le guest créé doit apparaître dans la liste'
+        );
     }
+
     public function testAdminCanAddGuest(): void
     {
         $crawler = $this->client->request('GET', '/admin/guest/add');
@@ -102,51 +126,53 @@ final class GuestControllerTest extends WebTestCase
             'La requête doit être redirigée après ajout.'
         );
 
-        $crawler = $this->client->followRedirect();
+        $this->client->followRedirect();
 
-        $this->assertSelectorExists('.alert-success', 'Le flash message de succès doit exister.');
-        $this->assertSelectorTextContains('.alert-success', 'Invité ajouté avec succès.');
+        $this->assertSelectorExists('.alert-success');
+        $this->assertSelectorTextContains(
+            '.alert-success',
+            'Invité ajouté avec succès.'
+        );
 
         $guest = $this->entityManager
             ->getRepository(User::class)
             ->findOneBy(['email' => $uniqueEmail]);
 
-        $this->assertNotNull($guest, 'L’invité doit exister en base après ajout.');
-        $this->assertFalse($guest->isAdmin(), 'L’invité ajouté ne doit pas être admin.');
-        $this->assertTrue($guest->isActive(), 'L’invité ajouté doit être actif.');
+        $this->assertNotNull($guest);
+        $this->assertFalse($guest->isAdmin());
+        $this->assertTrue($guest->isActive());
     }
+
     public function testAdminCanToggleGuest(): void
     {
         $guest = $this->createGuest('Invité Toggle', 'toggle@test.com');
-
         $admin = $this->createAdmin('admin@test.com');
 
         $this->client->loginUser($admin);
 
         $crawler = $this->client->request('GET', '/admin/guest/');
 
-        $form = $crawler->filter('form[action$="/toggle/' . $guest->getId() . '"]')->form();
+        $form = $crawler
+            ->filter('form[action$="/toggle/' . $guest->getId() . '"]')
+            ->form();
 
         $this->client->submit($form);
 
-        $this->assertTrue(
-            $this->client->getResponse()->isRedirect(),
-            'La requête doit être redirigée après toggle.'
-        );
-
+        $this->assertTrue($this->client->getResponse()->isRedirect());
         $this->client->followRedirect();
 
-        $toggledGuest = $this->entityManager->getRepository(User::class)->find($guest->getId());
-        $this->assertFalse($toggledGuest->isActive(), 'Le guest doit être désactivé après toggle.');
+        $toggledGuest = $this->entityManager
+            ->getRepository(User::class)
+            ->find($guest->getId());
+
+        self::assertNotNull($toggledGuest);
+        $this->assertFalse($toggledGuest->isActive());
     }
+
     public function testAdminCanDeleteGuest(): void
     {
         $guest = $this->createGuest('Invité Suppr', 'delete@test.com');
         $guestId = $guest->getId();
-
-        $admin = $this->entityManager->getRepository(User::class)
-            ->findOneBy(['email' => 'ina@zaoui.com']);
-        $this->client->loginUser($admin);
 
         $this->client->request(
             'POST',
@@ -156,20 +182,19 @@ final class GuestControllerTest extends WebTestCase
             ['CONTENT_TYPE' => 'application/x-www-form-urlencoded']
         );
 
-        $this->assertTrue(
-            $this->client->getResponse()->isRedirect(),
-            'La requête doit être redirigée après suppression.'
-        );
-
+        $this->assertTrue($this->client->getResponse()->isRedirect());
         $this->client->followRedirect();
 
-        $deletedGuest = $this->entityManager->getRepository(User::class)->find($guestId);
-        $this->assertNull($deletedGuest, 'L’invité doit être supprimé de la base.');
+        $deletedGuest = $this->entityManager
+            ->getRepository(User::class)
+            ->find($guestId);
+
+        $this->assertNull($deletedGuest);
     }
+
     protected function tearDown(): void
     {
         parent::tearDown();
         $this->entityManager->close();
-        $this->entityManager = null;
     }
 }

@@ -37,6 +37,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(name: 'is_active', type: Types::BOOLEAN)]
     private bool $isActive = true;
 
+    /**
+     * @var Collection<int, Media>
+     */
     #[ORM\OneToMany(targetEntity: Media::class, mappedBy: 'user', cascade: ['remove'])]
     private Collection $medias;
 
@@ -63,10 +66,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getUserIdentifier(): string
     {
-        return (string) $this->email;
+        if ($this->email === null || $this->email === '') {
+            throw new \LogicException('User has no email.');
+        }
+
+        return $this->email;
     }
 
-    // Sécurité et rôles
     public function getRoles(): array
     {
         $roles = ['ROLE_USER'];
@@ -76,7 +82,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return array_unique($roles);
     }
 
-    
     public function eraseCredentials(): void {}
 
     public function getPassword(): ?string
@@ -110,6 +115,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->description = $description;
     }
 
+    /**
+     * @return Collection<int, Media>
+     */
     public function getMedias(): Collection
     {
         return $this->medias;
@@ -133,6 +141,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
         return $this;
     }
+
     public function isAdmin(): bool
     {
         return $this->admin;
@@ -153,6 +162,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->isActive = $isActive;
         return $this;
     }
+
     public function isEnabled(): bool
     {
         return $this->isActive;

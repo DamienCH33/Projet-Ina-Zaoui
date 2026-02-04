@@ -98,12 +98,10 @@ class AlbumController extends AbstractController
         foreach ($medias as $media) {
             $path = $media->getPath();
 
-            if ($path !== null) {
-                $filePath = $projectDir . '/public/' . $path;
+            $filePath = $projectDir . '/public/' . $path;
 
-                if (is_file($filePath)) {
-                    unlink($filePath);
-                }
+            if (is_file($filePath)) {
+                unlink($filePath);
             }
 
             $this->em->remove($media);

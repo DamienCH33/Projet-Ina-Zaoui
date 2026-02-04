@@ -6,35 +6,45 @@ namespace App\Tests\Functional\Admin;
 
 use App\Entity\Media;
 use App\Entity\User;
+use App\DataFixtures\AppFixtures;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
-use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Doctrine\Common\DataFixtures\Loader;
+use Doctrine\Common\DataFixtures\Purger\ORMPurger;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 final class MediaControllerTest extends WebTestCase
 {
-    private $client;
-    private $entityManager;
+    private KernelBrowser $client;
+    private EntityManagerInterface $entityManager;
 
     protected function setUp(): void
     {
+        self::ensureKernelShutdown();
         $this->client = static::createClient();
         $container = static::getContainer();
-        $this->entityManager = $container->get('doctrine')->getManager();
+
+        /** @var EntityManagerInterface $entityManager */
+        $entityManager = $container->get(EntityManagerInterface::class);
+        $this->entityManager = $entityManager;
+
+        /** @var UserPasswordHasherInterface $hasher */
+        $hasher = $container->get(UserPasswordHasherInterface::class);
 
         $loader = new Loader();
-        $loader->addFixture(new \App\DataFixtures\AppFixtures(
-            $container->get(UserPasswordHasherInterface::class)
-        ));
+        $loader->addFixture(new AppFixtures($hasher));
 
         $purger = new ORMPurger($this->entityManager);
         $executor = new ORMExecutor($this->entityManager, $purger);
         $executor->execute($loader->getFixtures());
 
-        $admin = $this->entityManager->getRepository(User::class)
+        $admin = $this->entityManager
+            ->getRepository(User::class)
             ->findOneBy(['email' => 'ina@zaoui.com']);
+
+        self::assertNotNull($admin, 'L’utilisateur admin doit exister.');
         $this->client->loginUser($admin);
     }
 
@@ -43,7 +53,10 @@ final class MediaControllerTest extends WebTestCase
     {
         $this->client->request('GET', '/admin/media/');
         $this->assertResponseIsSuccessful();
-        $this->assertSelectorExists('main', 'La page index doit contenir la liste des médias.');
+        $this->assertSelectorExists(
+            'main',
+            'La page index doit contenir la liste des médias.'
+        );
     }
 
     /** Test formulaire invalide (fichier manquant) */
@@ -71,13 +84,20 @@ final class MediaControllerTest extends WebTestCase
         $media->setTitle('À supprimer');
         $media->setPath('uploads/test_delete.jpg');
 
-        $filePath = static::getContainer()->getParameter('kernel.project_dir') . '/public/uploads/test_delete.jpg';
+        /** @var string $projectDir */
+        $projectDir = static::getContainer()->getParameter('kernel.project_dir');
+        $filePath = $projectDir . '/public/uploads/test_delete.jpg';
+
         if (!is_dir(dirname($filePath))) {
             mkdir(dirname($filePath), 0777, true);
         }
         file_put_contents($filePath, 'fake data');
 
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => 'ina@zaoui.com']);
+        $user = $this->entityManager
+            ->getRepository(User::class)
+            ->findOneBy(['email' => 'ina@zaoui.com']);
+
+        self::assertNotNull($user);
         $media->setUser($user);
 
         $this->entityManager->persist($media);
@@ -90,13 +110,15 @@ final class MediaControllerTest extends WebTestCase
         $this->assertTrue($this->client->getResponse()->isRedirect());
         $this->client->followRedirect();
 
-        $deleted = static::getContainer()
-            ->get('doctrine')
+        $deleted = $this->entityManager
             ->getRepository(Media::class)
             ->find($mediaId);
 
         $this->assertNull($deleted, 'Le média doit être supprimé.');
-        $this->assertFileDoesNotExist($filePath, 'Le fichier physique doit être supprimé.');
+        $this->assertFileDoesNotExist(
+            $filePath,
+            'Le fichier physique doit être supprimé.'
+        );
     }
 
     /** Test de suppression d’un média inexistant */
@@ -107,15 +129,15 @@ final class MediaControllerTest extends WebTestCase
         $this->assertTrue($this->client->getResponse()->isRedirect());
         $this->client->followRedirect();
 
-        $this->assertSelectorExists('.alert-error, .alert-danger', 'Un message d’erreur doit être affiché.');
+        $this->assertSelectorExists(
+            '.alert-error, .alert-danger',
+            'Un message d’erreur doit être affiché.'
+        );
     }
 
     protected function tearDown(): void
     {
         parent::tearDown();
-        if ($this->entityManager !== null) {
-            $this->entityManager->close();
-        }
-        $this->entityManager = null;
+        $this->entityManager->close();
     }
 }

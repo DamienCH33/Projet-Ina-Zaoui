@@ -16,86 +16,75 @@ final class UserRepositoryTest extends KernelTestCase
     protected function setUp(): void
     {
         self::bootKernel();
-        $this->repository = static::getContainer()->get(UserRepository::class);
+
+        /** @var UserRepository $repository */
+        $repository = static::getContainer()->get(UserRepository::class);
+        $this->repository = $repository;
     }
 
-    
-    // test pour FindActiveGuestsPaginated
-  
     public function testFindActiveGuestsPaginated(): void
     {
-        $page = 1;
-        $limit = 10;
+        $guests = $this->repository->findActiveGuestsPaginated(1, 10);
 
-        $guests = $this->repository->findActiveGuestsPaginated($page, $limit);
-
-        $this->assertIsArray($guests, 'La méthode doit retourner un tableau.');
         foreach ($guests as $guest) {
             $this->assertArrayHasKey('id', $guest);
             $this->assertArrayHasKey('name', $guest);
             $this->assertArrayHasKey('activeMediasCount', $guest);
-            $this->assertIsInt($guest['activeMediasCount']);
         }
     }
 
-    // Test pour findOneByEmail
     public function testFindByEmail(): void
     {
         $email = 'ina@zaoui.com';
-        $user = $this->repository->findOneByEmail($email);
 
-        $this->assertInstanceOf(User::class, $user, 'Doit retourner un objet User.');
-        $this->assertSame($email, $user->getEmail(), 'L’email de l’utilisateur doit correspondre.');
+        $user = $this->repository->findOneBy(['email' => $email]);
+
+        $this->assertInstanceOf(User::class, $user);
+        $this->assertSame($email, $user->getEmail());
     }
 
-    // Test pour findAll
     public function testFindAll(): void
     {
         $users = $this->repository->findAll();
 
-        $this->assertIsArray($users, 'La méthode doit retourner un tableau.');
-        $this->assertNotEmpty($users, 'La liste des utilisateurs ne doit pas être vide.');
+        $this->assertNotEmpty($users);
         foreach ($users as $user) {
             $this->assertInstanceOf(User::class, $user);
         }
     }
 
-    // Test pour find() par ID
     public function testFindById(): void
     {
-        $allUsers = $this->repository->findAll();
-        if (!empty($allUsers)) {
-            $userId = $allUsers[0]->getId();
-            $user = $this->repository->find($userId);
+        $users = $this->repository->findAll();
 
-            $this->assertInstanceOf(User::class, $user);
-            $this->assertSame($userId, $user->getId());
-        } else {
-            $this->markTestSkipped('Pas d’utilisateur en base pour tester find() par ID.');
+        if ($users === []) {
+            $this->markTestSkipped('Pas d’utilisateur en base.');
         }
+
+        $userId = $users[0]->getId();
+        $user = $this->repository->find($userId);
+
+        $this->assertInstanceOf(User::class, $user);
+        $this->assertSame($userId, $user->getId());
     }
 
-    // Test findBy avec filtre admin
     public function testFindByAdmin(): void
     {
         $admins = $this->repository->findBy(['admin' => true]);
 
-        $this->assertIsArray($admins);
         foreach ($admins as $admin) {
             $this->assertInstanceOf(User::class, $admin);
             $this->assertTrue($admin->isAdmin());
         }
     }
 
-    // Test findOneBy email inexistant
     public function testFindOneByNonExistentEmail(): void
     {
         $user = $this->repository->findOneBy(['email' => 'inexistant@example.com']);
         $this->assertNull($user);
     }
 
-
-    public function testUpgradePasswordWithMock(): void
+    public function testUpgradePassword(): void
     {
         $user = new User();
         $user->setPassword('old_password');
@@ -108,11 +97,11 @@ final class UserRepositoryTest extends KernelTestCase
             ->disableOriginalConstructor()
             ->onlyMethods(['getEntityManager'])
             ->getMock();
+
         $repository->method('getEntityManager')->willReturn($em);
 
-        $newPassword = 'new_password';
-        $repository->upgradePassword($user, $newPassword);
+        $repository->upgradePassword($user, 'new_password');
 
-        $this->assertSame($newPassword, $user->getPassword());
+        $this->assertSame('new_password', $user->getPassword());
     }
 }

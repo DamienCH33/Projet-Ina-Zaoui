@@ -6,21 +6,31 @@ namespace App\Tests\Functional\Security;
 
 use App\Entity\User;
 use App\Tests\Functional\FunctionalTestCase;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 
 final class AccessTest extends FunctionalTestCase
 {
+    private KernelBrowser $client;
+
+    protected function setUp(): void
+    {
+        self::ensureKernelShutdown();
+        $this->client = static::createClient();
+    }
+
     public function testGuestCannotAccessAdminRoutes(): void
     {
-        $client = static::createClient();
-
-        $guest = $client->getContainer()
-            ->get('doctrine')
+        $guest = $this
+            ->getEntityManager()
             ->getRepository(User::class)
             ->findOneBy(['email' => 'invite+1@example.com']);
 
-        $this->assertNotNull($guest, 'Le guest invite+1@example.com doit exister dans les fixtures.');
+        self::assertNotNull(
+            $guest,
+            'Le guest invite+1@example.com doit exister dans les fixtures.'
+        );
 
-        $client->loginUser($guest);
+        $this->client->loginUser($guest);
 
         $restrictedRoutes = [
             ['/admin/guest', 'GET'],
@@ -30,22 +40,27 @@ final class AccessTest extends FunctionalTestCase
         ];
 
         foreach ($restrictedRoutes as [$url, $method]) {
-            $client->request($method, $url);
-            $this->assertResponseStatusCodeSame(403, "L’invité ne doit pas accéder à {$url}");
+            $this->client->request($method, $url);
+            $this->assertResponseStatusCodeSame(
+                403,
+                "L’invité ne doit pas accéder à {$url}"
+            );
         }
     }
+
     public function testAdminHasAccess(): void
     {
-        $client = static::createClient();
-
-        $admin = $client->getContainer()
-            ->get('doctrine')
+        $admin = $this
+            ->getEntityManager()
             ->getRepository(User::class)
             ->findOneBy(['email' => 'ina@zaoui.com']);
 
-        $this->assertNotNull($admin, 'L’admin ina@zaoui.com doit exister dans les fixtures.');
+        self::assertNotNull(
+            $admin,
+            'L’admin ina@zaoui.com doit exister dans les fixtures.'
+        );
 
-        $client->loginUser($admin);
+        $this->client->loginUser($admin);
 
         $adminRoutes = [
             '/admin/guest',
@@ -53,13 +68,15 @@ final class AccessTest extends FunctionalTestCase
         ];
 
         foreach ($adminRoutes as $route) {
-            $client->request('GET', $route);
+            $this->client->request('GET', $route);
 
-            if ($client->getResponse()->isRedirection()) {
-                $client->followRedirect();
+            if ($this->client->getResponse()->isRedirection()) {
+                $this->client->followRedirect();
             }
 
-            $this->assertResponseIsSuccessful("L’admin doit pouvoir accéder à {$route}");
+            $this->assertResponseIsSuccessful(
+                "L’admin doit pouvoir accéder à {$route}"
+            );
         }
     }
 }
