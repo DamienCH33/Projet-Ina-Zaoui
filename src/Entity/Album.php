@@ -17,7 +17,7 @@ class Album
     private ?int $id = null;
 
     #[ORM\Column(name:'name',length: 150, type: Types::STRING)]
-    private string $name;
+    private ?string $name = null;
 
     #[ORM\OneToMany(targetEntity: Media::class, mappedBy: 'album', cascade: ['remove'])]
     private Collection $medias;
@@ -32,7 +32,7 @@ class Album
         return $this->id;
     }
 
-    public function getName(): string
+    public function getName(): ?string
     {
         return $this->name;
     }
