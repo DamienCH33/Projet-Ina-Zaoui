@@ -3,25 +3,30 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Media;
+use App\Entity\User;
 use App\Form\MediaType;
 use App\Repository\MediaRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 #[Route('/admin/media')]
 class MediaController extends AbstractController
 {
-    public function __construct(private MediaRepository $mediaRepository, private EntityManagerInterface $em) {}
+    public function __construct(
+        private MediaRepository $mediaRepository,
+        private EntityManagerInterface $em
+    ) {}
 
     #[Route('/', name: 'admin_media_index')]
-    public function index(Request $request)
+    public function index(Request $request): Response
     {
         $page = $request->query->getInt('page', 1);
 
         $criteria = [];
-
         if (!$this->isGranted('ROLE_ADMIN')) {
             $criteria['user'] = $this->getUser();
         }
@@ -32,6 +37,7 @@ class MediaController extends AbstractController
             25,
             25 * ($page - 1)
         );
+
         $total = $this->mediaRepository->count([]);
 
         return $this->render('admin/media/index.html.twig', [
@@ -42,9 +48,10 @@ class MediaController extends AbstractController
     }
 
     #[Route('/add', name: 'admin_media_add')]
-    public function add(Request $request)
+    public function add(Request $request): Response
     {
         $media = new Media();
+
         $form = $this->createForm(MediaType::class, $media, [
             'is_admin' => $this->isGranted('ROLE_ADMIN'),
         ]);
@@ -53,16 +60,25 @@ class MediaController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $file = $form->get('file')->getData();
 
-            if ($file) {
-                $filename = uniqid() . '.' . $file->guessExtension();
-                $uploadDir = $this->getParameter('kernel.project_dir') . '/public/uploads';
-                $file->move($uploadDir, $filename);
+            if ($file !== null) {
+                /** @var string $projectDir */
+                $projectDir = $this->getParameter('kernel.project_dir');
 
+                $filename = uniqid() . '.' . $file->guessExtension();
+                $uploadDir = $projectDir . '/public/uploads';
+
+                $file->move($uploadDir, $filename);
                 $media->setPath('uploads/' . $filename);
             }
 
             if (!$this->isGranted('ROLE_ADMIN')) {
-                $media->setUser($this->getUser());
+                $user = $this->getUser();
+
+                if (!$user instanceof User) {
+                    throw new AccessDeniedException();
+                }
+
+                $media->setUser($user);
             }
 
             $this->em->persist($media);
@@ -77,18 +93,25 @@ class MediaController extends AbstractController
     }
 
     #[Route('/delete/{id}', name: 'admin_media_delete')]
-    public function delete(int $id)
+    public function delete(int $id): Response
     {
         $media = $this->mediaRepository->find($id);
 
-        if (!$media) {
+        if ($media === null) {
             $this->addFlash('error', 'Le média demandé est introuvable.');
             return $this->redirectToRoute('admin_media_index');
         }
 
-        $path = $this->getParameter('kernel.project_dir') . '/public/' . $media->getPath();
-        if (file_exists($path) && is_file($path)) {
-            unlink($path);
+        /** @var string $projectDir */
+        $projectDir = $this->getParameter('kernel.project_dir');
+
+        $path = $media->getPath();
+        if ($path !== null) {
+            $filePath = $projectDir . '/public/' . $path;
+
+            if (is_file($filePath)) {
+                unlink($filePath);
+            }
         }
 
         $this->em->remove($media);

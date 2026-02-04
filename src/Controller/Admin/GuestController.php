@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\User;
 use App\Form\UserType;
 use App\Repository\UserRepository;
+use App\Service\GuestService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -19,7 +20,7 @@ class GuestController extends AbstractController
 {
     public function __construct(private UserRepository $userRepository, private EntityManagerInterface $em,  private UserPasswordHasherInterface $passwordHasher) {}
     #[Route('/', name: 'admin_guest_index')]
-    public function index(Request $request)
+    public function index(Request $request): Response
     {
         $page = $request->query->getInt('page', 1);
         $limit = 10;
@@ -81,8 +82,7 @@ class GuestController extends AbstractController
         ]);
     }
 
-
-    #[Route('/delete/{id}', name: 'admin_guest_delete')]
+    #[Route('/delete/{id}', name: 'admin_guest_delete', methods: ['POST'])]
     public function delete(int $id): Response
     {
         $guest = $this->userRepository->find($id);
@@ -98,7 +98,7 @@ class GuestController extends AbstractController
         return $this->redirectToRoute('admin_guest_index');
     }
 
-    #[Route('/toggle/{id}', name: 'admin_guests_toggle')]
+    #[Route('/toggle/{id}', name: 'admin_guests_toggle', methods: ['POST'])]
     public function toggle(int $id): Response
     {
         $guest = $this->userRepository->find($id);

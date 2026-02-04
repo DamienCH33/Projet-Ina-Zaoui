@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Album;
+use App\Entity\Media;
 use App\Form\AlbumType;
 use App\Repository\AlbumRepository;
 use App\Repository\MediaRepository;
@@ -88,13 +89,21 @@ class AlbumController extends AbstractController
             return $this->redirectToRoute('admin_album_index');
         }
 
+        /** @var Media[] $medias */
         $medias = $this->mediaRepository->findBy(['album' => $album]);
 
-        foreach ($medias as $media) {
-            $filePath = $this->getParameter('kernel.project_dir') . '/public/' . $media->getPath();
+        /** @var string $projectDir */
+        $projectDir = $this->getParameter('kernel.project_dir');
 
-            if (file_exists($filePath) && is_file($filePath)) {
-                unlink($filePath);
+        foreach ($medias as $media) {
+            $path = $media->getPath();
+
+            if ($path !== null) {
+                $filePath = $projectDir . '/public/' . $path;
+
+                if (is_file($filePath)) {
+                    unlink($filePath);
+                }
             }
 
             $this->em->remove($media);

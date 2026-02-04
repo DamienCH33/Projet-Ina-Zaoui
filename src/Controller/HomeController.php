@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Repository\AlbumRepository;
 use App\Repository\MediaRepository;
 use App\Repository\UserRepository;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -13,7 +14,7 @@ class HomeController extends AbstractController
     public function __construct(
         private AlbumRepository $albumRepository,
         private MediaRepository $mediaRepository,
-        private UserRepository $userRepository
+        private UserRepository $userRepository,
     ) {}
 
     #[Route('/', name: 'home')]
@@ -23,15 +24,30 @@ class HomeController extends AbstractController
     }
 
     #[Route('/guests', name: 'guests')]
-    public function guests()
+    public function guests(Request $request)
     {
-        $guests = $this->userRepository->findBy([
-            'admin' => false,
-            'isActive' => true
-        ]);
+        $page = $request->query->getInt('page', 1);
+
+        $guestsRows = $this->userRepository->findActiveGuestsPaginated($page, 10);
+
+        $guestsData = [];
+
+        foreach ($guestsRows as $row) {
+            $guestsData[] = [
+                'guest' => [
+                    'id' => $row['id'],
+                    'name' => $row['name']
+                ],
+                'activeMediasCount' => (int) $row['activeMediasCount'],
+            ];
+        }
+
+        $totalPages = $page + 1;
 
         return $this->render('front/guests.html.twig', [
-            'guests' => $guests
+            'guestsData' => $guestsData,
+            'currentPage' => $page,
+            'totalPages' => $totalPages
         ]);
     }
 
