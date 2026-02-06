@@ -24,19 +24,19 @@ class MediaType extends AbstractType
                 'mapped' => false,
                 'required' => true,
                 'constraints' => [
-                    new NotNull([
-                        'message' => 'Veuillez choisir un fichier.',
-                    ]),
-                    new Image([
-                        'maxSize' => '2M',
-                        'mimeTypes' => [
+                    new NotNull(
+                        message: 'Veuillez choisir un fichier.',
+                    ),
+                    new Image(
+                        maxSize: '2M',
+                        mimeTypes: [
                             'image/jpeg',
                             'image/png',
                             'image/gif',
                             'image/webp',
                         ],
-                        'mimeTypesMessage' => 'Seules les images (JPEG, PNG, GIF, WEBP) sont autorisées.',
-                    ]),
+                        mimeTypesMessage: 'Seules les images (JPEG, PNG, GIF, WEBP) sont autorisées.',
+                    ),
                 ],
             ])
             ->add('title', TextType::class, [
