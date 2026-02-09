@@ -29,6 +29,7 @@ class MediaType extends AbstractType
                     ),
                     new Image(
                         maxSize: '2M',
+                        maxSizeMessage: 'Le fichier est trop volumineux. La taille maximale autorisée est de 2 Mégaoctets.',
                         mimeTypes: [
                             'image/jpeg',
                             'image/png',
