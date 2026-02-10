@@ -22,8 +22,8 @@ security:
         check_path: admin_login
         default_target_path: /admin/media
       logout:
-        path: /logout
-        target: /
+        path: admin_logout
+        target: home
 
   # Hiérarchie des rôles
   role_hierarchy:
