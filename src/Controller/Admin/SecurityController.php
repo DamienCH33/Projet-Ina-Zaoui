@@ -23,5 +23,6 @@ class SecurityController extends AbstractController
 
     #[Route('/logout', name: 'admin_logout')]
     public function logout(): void
-    {}
+    {
+    }
 }
